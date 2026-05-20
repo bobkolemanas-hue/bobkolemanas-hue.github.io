@@ -1,5 +1,1023 @@
 <!doctype html>
 <html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AIDB Share Lab — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #06080c;
+    --bg-1: #0a0e15;
+    --bg-2: #0d131c;
+    --line: rgba(125, 211, 252, 0.10);
+    --line-strong: rgba(125, 211, 252, 0.22);
+    --fg: #e6edf3;
+    --fg-dim: #9aa7b8;
+    --fg-mute: #65748a;
+    --cyan: #7dd3fc;
+    --mint: #5eead4;
+    --blue: #6aa9ff;
+    --amber: #f3c179;
+    --red: #fb7185;
+    --ok: #5eead4;
+    --warn: #f3c179;
+    --danger: #fb7185;
+    --radius: 4px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"ss01","cv02"}
+  body{
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(to right, rgba(125,211,252,0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(125,211,252,0.045) 1px, transparent 1px),
+      radial-gradient(ellipse at 50% -20%, rgba(106,169,255,0.10), transparent 60%);
+    background-size: 56px 56px, 56px 56px, 100% 800px;
+    background-position: 0 0, 0 0, 0 0;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  ::selection{background:rgba(125,211,252,0.25);color:#fff}
+  .mono{font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+  /* ============ Layout ============ */
+  .wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+  @media (max-width: 640px){ .wrap{padding:0 18px} }
+
+  /* ============ Top bar ============ */
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    background:linear-gradient(to bottom, rgba(6,8,12,0.92), rgba(6,8,12,0.72) 70%, rgba(6,8,12,0));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .topbar-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand-mark{
+    width:26px;height:26px;border:1px solid var(--line-strong);
+    display:grid;place-items:center;border-radius:3px;
+    background: linear-gradient(135deg, rgba(125,211,252,0.10), rgba(94,234,212,0.06));
+    color:var(--cyan);font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;
+  }
+  .brand-name{font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:0.02em;color:var(--fg)}
+  .brand-name .sub{color:var(--fg-mute);margin-left:6px}
+  .topnav{display:flex;gap:22px;align-items:center}
+  .topnav a{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--fg-dim);transition:color .15s}
+  .topnav a:hover{color:var(--cyan)}
+  .topnav .status{display:flex;align-items:center;gap:8px;color:var(--fg-mute);font-size:11.5px}
+  .status-dot{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint);animation:pulse 2.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+  @media (max-width: 720px){ .topnav .nav-link{display:none} }
+
+  /* ============ Hero ============ */
+  .hero{padding:64px 0 56px;position:relative}
+  .hero-tag{
+    display:inline-flex;align-items:center;gap:10px;
+    border:1px solid var(--line);border-radius:999px;
+    padding:6px 12px 6px 8px;
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--fg-dim);
+    margin-bottom:24px;
+  }
+  .hero-tag .chip{background:rgba(125,211,252,0.12);color:var(--cyan);padding:2px 7px;border-radius:999px;font-size:10.5px;letter-spacing:0.04em}
+  h1.hero-headline{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-weight:600;
+    letter-spacing:-0.025em;
+    line-height:1.04;
+    font-size:clamp(34px, 5.6vw, 64px);
+    margin:0 0 22px;
+    color:#f3f7fb;
+    text-wrap:balance;
+    max-width:18ch;
+  }
+  h1 .accent{color:var(--cyan)}
+  h1 .accent-mint{color:var(--mint)}
+  .hero-sub{
+    font-size:clamp(15px, 1.6vw, 18px);
+    color:var(--fg-dim);line-height:1.55;max-width:62ch;margin:0 0 32px;
+    text-wrap:pretty;
+  }
+  .cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:36px}
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:12px 18px;border-radius:4px;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:0.01em;
+    border:1px solid var(--line-strong);
+    transition: background .15s, border-color .15s, transform .05s;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{
+    background:linear-gradient(180deg, rgba(125,211,252,0.18), rgba(125,211,252,0.10));
+    color:#cdeaff;border-color:rgba(125,211,252,0.45);
+  }
+  .btn-primary:hover{background:linear-gradient(180deg, rgba(125,211,252,0.28), rgba(125,211,252,0.16));border-color:rgba(125,211,252,0.7)}
+  .btn-secondary{color:var(--fg);background:rgba(255,255,255,0.02)}
+  .btn-secondary:hover{background:rgba(125,211,252,0.06);border-color:var(--line-strong)}
+  .btn .arrow{transition:transform .15s}
+  .btn:hover .arrow{transform:translateX(3px)}
+
+  /* Terminal block in hero */
+  .terminal{
+    border:1px solid var(--line-strong);
+    background:linear-gradient(180deg, rgba(13,19,28,0.85), rgba(10,14,21,0.85));
+    border-radius:6px;
+    overflow:hidden;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+  }
+  .terminal-bar{
+    display:flex;align-items:center;gap:8px;
+    padding:9px 14px;border-bottom:1px solid var(--line);
+    background:rgba(125,211,252,0.03);
+  }
+  .terminal-bar .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.06)}
+  .terminal-bar .title{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--fg-mute);margin-left:6px}
+  .terminal-body{padding:18px 20px;font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.7}
+  .term-line{display:flex;gap:10px;color:var(--fg-dim)}
+  .term-line .prompt{color:var(--mint);user-select:none}
+  .term-line .out{color:var(--fg)}
+  .term-line .dim{color:var(--fg-mute)}
+  .term-line .ok{color:var(--mint)}
+  .term-line .info{color:var(--cyan)}
+  .term-line .key{color:var(--amber)}
+  .blink{display:inline-block;width:8px;height:14px;background:var(--cyan);margin-left:2px;vertical-align:-2px;animation:blink 1s steps(2,start) infinite}
+  @keyframes blink{to{visibility:hidden}}
+
+  /* ============ Section scaffolding ============ */
+  section.block{padding:72px 0;border-top:1px solid var(--line);position:relative}
+  .section-head{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:36px;flex-wrap:wrap}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--cyan);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .eyebrow .num{color:var(--fg-mute)}
+  .eyebrow .line{flex:1;height:1px;background:var(--line);max-width:60px}
+  h2.section-title{
+    font-size:clamp(26px, 3.4vw, 38px);
+    font-weight:600;letter-spacing:-0.02em;line-height:1.08;
+    margin:0 0 14px;color:#f3f7fb;text-wrap:balance;max-width:22ch;
+  }
+  .section-lede{color:var(--fg-dim);font-size:15.5px;line-height:1.6;max-width:60ch;margin:0;text-wrap:pretty}
+
+  /* ============ Workflow strip ============ */
+  .workflow{
+    border:1px solid var(--line);border-radius:6px;
+    padding:22px;
+    background:linear-gradient(180deg, rgba(13,19,28,0.55), rgba(10,14,21,0.55));
+  }
+  .workflow-row{
+    display:grid;grid-template-columns:repeat(6, 1fr);gap:0;
+    align-items:stretch;
+  }
+  .wf-step{
+    padding:18px 16px;
+    border-right:1px dashed var(--line);
+    display:flex;flex-direction:column;gap:8px;
+    min-width:0;
+  }
+  .wf-step:last-child{border-right:0}
+  .wf-step .wf-idx{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--fg-mute);letter-spacing:0.08em}
+  .wf-step .wf-label{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--fg);letter-spacing:-0.005em}
+  .wf-step .wf-meta{font-size:11.5px;color:var(--fg-mute);line-height:1.5}
+  .wf-step .wf-bar{margin-top:auto;height:2px;background:linear-gradient(90deg, var(--cyan), transparent);opacity:.55}
+  @media (max-width: 880px){
+    .workflow-row{grid-template-columns:repeat(2, 1fr)}
+    .wf-step{border-right:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:14px}
+    .wf-step:nth-child(2n){border-right:0}
+    .wf-step:nth-last-child(-n+2){border-bottom:0}
+    .wf-step:last-child{border-bottom:0}
+  }
+
+  /* ============ ICP cards ============ */
+  .icp-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+    gap:14px;
+  }
+  .icp-card{
+    border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(13,19,28,0.7), rgba(10,14,21,0.7));
+    border-radius:6px;padding:18px 18px 16px;
+    position:relative;overflow:hidden;
+    transition:border-color .2s, transform .2s;
+  }
+  .icp-card:hover{border-color:var(--line-strong);transform:translateY(-1px)}
+  .icp-card::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
+    background:linear-gradient(180deg, var(--cyan), transparent);
+    opacity:.55;
+  }
+  .icp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .icp-tag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--fg-mute);letter-spacing:0.06em}
+  .icp-id{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--cyan);background:rgba(125,211,252,0.08);padding:2px 6px;border-radius:3px}
+  .icp-name{font-size:16px;font-weight:600;letter-spacing:-0.01em;margin:0 0 6px;color:#f3f7fb}
+  .icp-desc{font-size:13px;color:var(--fg-dim);line-height:1.5;margin:0 0 16px;min-height:3.4em}
+  .scores{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+  .score-row{display:grid;grid-template-columns:96px 1fr 32px;gap:10px;align-items:center}
+  .score-label{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--fg-mute);letter-spacing:0.04em}
+  .score-bar{height:4px;background:rgba(125,211,252,0.06);border-radius:2px;overflow:hidden;position:relative}
+  .score-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg, var(--cyan), var(--mint));border-radius:2px}
+  .score-fill.warn{background:linear-gradient(90deg, var(--amber), var(--amber))}
+  .score-fill.risk-low{background:linear-gradient(90deg, var(--mint), var(--mint))}
+  .score-fill.risk-med{background:linear-gradient(90deg, var(--amber), var(--amber))}
+  .score-fill.risk-hi{background:linear-gradient(90deg, var(--red), var(--red))}
+  .score-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--fg);text-align:right}
+
+  /* ============ Trust box ============ */
+  .trust{
+    margin-top:22px;border:1px solid rgba(94,234,212,0.30);
+    background:
+      linear-gradient(180deg, rgba(94,234,212,0.05), rgba(94,234,212,0.02)),
+      linear-gradient(180deg, rgba(13,19,28,0.85), rgba(10,14,21,0.85));
+    border-radius:6px;padding:20px 22px;
+    display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;
+  }
+  .trust-icon{
+    width:36px;height:36px;border-radius:4px;
+    border:1px solid rgba(94,234,212,0.4);
+    display:grid;place-items:center;color:var(--mint);
+    background:rgba(94,234,212,0.06);
+    font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;
+    flex-shrink:0;
+  }
+  .trust-title{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--mint);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+  .trust-body{color:var(--fg);font-size:14.5px;line-height:1.55;margin:0;text-wrap:pretty}
+
+  /* ============ Share Tabs ============ */
+  .share-shell{
+    border:1px solid var(--line-strong);border-radius:8px;overflow:hidden;
+    background:linear-gradient(180deg, rgba(13,19,28,0.85), rgba(10,14,21,0.85));
+    box-shadow:0 20px 60px -25px rgba(0,0,0,0.7);
+  }
+  .share-toolbar{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 14px;border-bottom:1px solid var(--line);
+    background:rgba(125,211,252,0.03);
+    flex-wrap:wrap;
+  }
+  .share-toolbar .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.06)}
+  .share-toolbar .ttitle{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--fg-mute);margin-left:6px}
+  .share-toolbar .ttitle .ok{color:var(--mint)}
+  .share-toolbar .right{margin-left:auto;display:flex;gap:10px;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--fg-mute)}
+  .share-tabs{
+    display:flex;gap:0;
+    border-bottom:1px solid var(--line);
+    overflow-x:auto;
+    scrollbar-width:thin;
+  }
+  .share-tab{
+    padding:14px 18px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+    color:var(--fg-mute);border-right:1px solid var(--line);
+    white-space:nowrap;position:relative;flex-shrink:0;
+    transition:color .15s, background .15s;
+  }
+  .share-tab:hover{color:var(--fg-dim);background:rgba(125,211,252,0.03)}
+  .share-tab.active{color:var(--cyan);background:rgba(125,211,252,0.06)}
+  .share-tab.active::after{
+    content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--cyan);
+  }
+  .share-tab .tab-prefix{color:var(--fg-mute);margin-right:6px}
+  .share-tab.active .tab-prefix{color:var(--cyan)}
+
+  .share-body{padding:28px 28px 26px;display:grid;grid-template-columns:1.1fr 1fr;gap:28px}
+  @media (max-width: 880px){.share-body{grid-template-columns:1fr;padding:22px}}
+
+  .share-left{display:flex;flex-direction:column;gap:20px;min-width:0}
+  .share-right{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+  .field-label{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--fg-mute);
+    letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .field-label .ic{color:var(--cyan)}
+  .why-text{font-size:17px;line-height:1.45;color:#f3f7fb;margin:0;font-weight:500;letter-spacing:-0.01em;text-wrap:pretty}
+
+  .bullets{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+  .bullets li{position:relative;padding-left:22px;color:var(--fg-dim);font-size:14.5px;line-height:1.5;text-wrap:pretty}
+  .bullets li::before{
+    content:"▸";position:absolute;left:0;top:0;color:var(--cyan);
+    font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:1.5;
+  }
+
+  .clip{
+    border:1px dashed var(--line-strong);border-radius:4px;
+    padding:14px 16px;background:rgba(106,169,255,0.04);
+  }
+  .clip-label{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--blue);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px}
+  .clip-body{font-size:14px;color:var(--fg);line-height:1.5;font-style:italic}
+
+  .trust-note-inline{
+    display:flex;gap:10px;align-items:flex-start;
+    background:rgba(94,234,212,0.04);
+    border:1px solid rgba(94,234,212,0.18);
+    border-radius:4px;padding:10px 12px;
+  }
+  .trust-note-inline .tag{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;
+    color:var(--mint);letter-spacing:0.1em;text-transform:uppercase;
+    background:rgba(94,234,212,0.10);padding:2px 6px;border-radius:3px;
+    flex-shrink:0;margin-top:1px;
+  }
+  .trust-note-inline .body{font-size:13px;color:var(--fg-dim);line-height:1.5}
+
+  /* Compose card (right) */
+  .compose{
+    border:1px solid var(--line-strong);border-radius:6px;
+    background:#0a0e15;
+    overflow:hidden;
+  }
+  .compose-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;border-bottom:1px solid var(--line);
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--fg-mute);
+  }
+  .channel-switch{display:flex;gap:0;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .channel-switch button{
+    padding:5px 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    color:var(--fg-mute);background:transparent;border-right:1px solid var(--line);
+  }
+  .channel-switch button:last-child{border-right:0}
+  .channel-switch button.on{background:rgba(125,211,252,0.10);color:var(--cyan)}
+  .compose-body{padding:18px 18px 16px}
+  .compose-meta{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--fg-mute)}
+  .compose-meta .row{display:flex;gap:8px}
+  .compose-meta .row .k{color:var(--fg-mute);width:42px}
+  .compose-meta .row .v{color:var(--fg)}
+  .compose-text{
+    font-size:14.5px;line-height:1.6;color:#e6edf3;
+    background:rgba(125,211,252,0.03);
+    border:1px solid var(--line);
+    border-radius:4px;padding:14px 16px;
+    text-wrap:pretty;
+    white-space:pre-wrap;
+  }
+  .compose-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .copy-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--fg);
+    padding:8px 12px;border:1px solid var(--line-strong);border-radius:3px;
+    background:rgba(125,211,252,0.06);
+    transition:background .15s, border-color .15s;
+  }
+  .copy-btn:hover{background:rgba(125,211,252,0.14)}
+  .copy-btn.copied{background:rgba(94,234,212,0.16);border-color:rgba(94,234,212,0.5);color:var(--mint)}
+  .ghost-btn{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--fg-mute);
+    padding:8px 12px;border:1px solid var(--line);border-radius:3px;
+  }
+  .ghost-btn:hover{color:var(--fg-dim);border-color:var(--line-strong)}
+
+  /* Audience meta row above compose */
+  .audience-meta{
+    display:flex;gap:8px;flex-wrap:wrap;
+  }
+  .meta-chip{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+    padding:4px 8px;border-radius:3px;
+    color:var(--fg-dim);border:1px solid var(--line);
+    background:rgba(125,211,252,0.03);
+  }
+  .meta-chip .k{color:var(--fg-mute);margin-right:4px}
+  .meta-chip .v{color:var(--cyan)}
+
+  /* ============ Measurement ============ */
+  .metric-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:14px}
+  @media (max-width: 800px){.metric-grid{grid-template-columns:repeat(2, 1fr)}}
+  .metric{
+    border:1px solid var(--line);border-radius:6px;
+    padding:18px 18px 16px;
+    background:linear-gradient(180deg, rgba(13,19,28,0.7), rgba(10,14,21,0.7));
+    position:relative;overflow:hidden;
+  }
+  .metric .mlabel{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--fg-mute);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px}
+  .metric .mval{font-size:32px;font-weight:600;letter-spacing:-0.02em;color:#f3f7fb;font-family:'IBM Plex Sans',sans-serif;line-height:1}
+  .metric .mdelta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mint);margin-top:6px;display:flex;align-items:center;gap:6px}
+  .metric .mdelta.neg{color:var(--red)}
+  .spark{margin-top:14px;height:36px;width:100%;display:block}
+
+  /* ============ Closing ============ */
+  .closing{
+    border:1px solid var(--line-strong);border-radius:8px;
+    padding:48px 40px;
+    background:
+      radial-gradient(ellipse at 80% 20%, rgba(106,169,255,0.10), transparent 60%),
+      linear-gradient(180deg, rgba(13,19,28,0.85), rgba(10,14,21,0.85));
+    text-align:left;
+  }
+  .closing h2{font-size:clamp(26px, 3.6vw, 40px);font-weight:600;letter-spacing:-0.02em;line-height:1.1;margin:0 0 16px;color:#f3f7fb;text-wrap:balance;max-width:22ch}
+  .closing p{font-size:16px;line-height:1.6;color:var(--fg-dim);margin:0;max-width:60ch;text-wrap:pretty}
+
+  /* ============ Footer ============ */
+  footer{padding:42px 0 60px;border-top:1px solid var(--line);margin-top:48px}
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  .foot .left{display:flex;align-items:center;gap:14px;color:var(--fg-mute);font-family:'IBM Plex Mono',monospace;font-size:11.5px}
+  .foot .right{color:var(--fg-mute);font-family:'IBM Plex Mono',monospace;font-size:11.5px;display:flex;gap:14px}
+  .foot .right a:hover{color:var(--fg-dim)}
+
+  /* Misc */
+  .divider-mono{font-family:'IBM Plex Mono',monospace;color:var(--fg-mute);font-size:11px;letter-spacing:0.1em;display:flex;align-items:center;gap:10px;margin-bottom:30px}
+  .divider-mono .line{flex:1;height:1px;background:var(--line);max-width:64px}
+
+  /* Scroll-in animation */
+  .reveal{opacity:0;transform:translateY(8px);transition:opacity .5s ease, transform .5s ease}
+  .reveal.in{opacity:1;transform:none}
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+  const { useState, useEffect, useRef, useMemo } = React;
+
+  /* ============ Data ============ */
+  const ICPS = [
+    {
+      id: "CTO",
+      name: "CTO / Technical Leader",
+      desc: "Looks for technical signal, implementation risk, and architectural relevance.",
+      scores: { Shareability: 78, Clarity: 84, Usefulness: 88, TrustRisk: 14 },
+    },
+    {
+      id: "FND",
+      name: "Founder / Operator",
+      desc: "Looks for strategic implications, urgency, and market direction.",
+      scores: { Shareability: 86, Clarity: 72, Usefulness: 81, TrustRisk: 22 },
+    },
+    {
+      id: "LEAD",
+      name: "Team Lead",
+      desc: "Looks for practical workplace takeaways the team can act on.",
+      scores: { Shareability: 74, Clarity: 88, Usefulness: 90, TrustRisk: 11 },
+    },
+    {
+      id: "CHMP",
+      name: "AI Champion",
+      desc: "Looks for credible material to forward internally and build momentum.",
+      scores: { Shareability: 91, Clarity: 79, Usefulness: 76, TrustRisk: 28 },
+    },
+    {
+      id: "FRND",
+      name: "AI-Curious Friend",
+      desc: "Looks for plain-English relevance without hype.",
+      scores: { Shareability: 68, Clarity: 92, Usefulness: 70, TrustRisk: 9 },
+    },
+  ];
+
+  const TABS = [
+    {
+      key: "boss",
+      label: "Send to your boss",
+      icp: "Team Lead",
+      tone: "Practical",
+      why: "This explains how agent workflows change the way teams prepare work, assign tasks, and review outputs.",
+      bullets: [
+        "The format debate is really about who needs to read or act on the work.",
+        "Markdown is useful for agent-readable working files.",
+        "Human-facing outputs still need clarity, structure, and judgment.",
+      ],
+      copy: "Worth a quick listen: this AIDB episode has a practical framing for agent workflows. The useful takeaway is that we should separate agent-readable working files from human-facing outputs, instead of treating one format as universally right.",
+      clip: "The moment where NLW frames Markdown vs HTML as an \u201Cand, not or\u201D decision.",
+      trust: "Useful because it is practical, not hype-driven.",
+      stamp: "00:14:22 \u2192 00:17:46",
+    },
+    {
+      key: "team",
+      label: "Send to your team",
+      icp: "Team Lead",
+      tone: "Operational",
+      why: "This gives the team a shared language for preparing work that agents can actually help with.",
+      bullets: [
+        "Agents work better when project state is explicit.",
+        "Teams need to separate decided, provisional, and open items.",
+        "Better briefs create better AI outputs.",
+      ],
+      copy: "Sharing this because it maps directly to how we should work with agents: less vague prompting, more clear project state. The big idea is to stage the conditions for the agent to finish the work.",
+      clip: "The moment about moving from finishing the document to setting up the conditions for an agent.",
+      trust: "Best shared as an internal workflow idea, not a claim that agents replace judgment.",
+      stamp: "00:22:08 \u2192 00:25:30",
+    },
+    {
+      key: "founder",
+      label: "Send to a founder",
+      icp: "Founder / Operator",
+      tone: "Strategic",
+      why: "This points to a bigger shift in knowledge work: teams that structure work for agents will move faster.",
+      bullets: [
+        "Agent-native work requires clearer inputs.",
+        "The value shifts from producing every artifact manually to designing the workflow.",
+        "The advantage is operational, not just technical.",
+      ],
+      copy: "This AIDB episode has a useful founder-level takeaway: the leverage is not just using agents, it is designing work so agents can meaningfully advance it.",
+      clip: "The moment about staging work so agents can complete the next step.",
+      trust: "Good strategic signal without overselling autonomy.",
+      stamp: "00:31:11 \u2192 00:34:02",
+    },
+    {
+      key: "friend",
+      label: "Send to an AI-curious friend",
+      icp: "AI-Curious Friend",
+      tone: "Plain-English",
+      why: "This makes agent work easier to understand without jargon.",
+      bullets: [
+        "AI tools need clear instructions and context.",
+        "Different formats are useful for different readers.",
+        "Humans still decide what good looks like.",
+      ],
+      copy: "This is a good plain-English episode on how people are learning to work with AI agents. The simple takeaway: AI is more useful when we give it clear working files and then turn the result into something humans can actually understand.",
+      clip: "The Markdown vs HTML explanation.",
+      trust: "Accessible without pretending AI is magic.",
+      stamp: "00:08:45 \u2192 00:11:20",
+    },
+    {
+      key: "skeptic",
+      label: "Send to a skeptic",
+      icp: "Skeptic",
+      tone: "Grounded",
+      why: "This is a grounded example of AI being useful without removing human oversight.",
+      bullets: [
+        "Agents need constraints and review.",
+        "Format choices should serve the task.",
+        "Human judgment remains the final layer.",
+      ],
+      copy: "This is one of the more grounded AI workflow takes I\u2019ve heard. It does not claim agents solve everything. It shows where they help: organizing work, moving drafts forward, and making humans clearer about what they want.",
+      clip: "The human-readable vs agent-readable framing.",
+      trust: "Share this as a practical workflow example, not a hype clip.",
+      stamp: "00:38:50 \u2192 00:41:33",
+    },
+  ];
+
+  const WORKFLOW = [
+    { idx: "01", label: "Episode transcript", meta: "Ingest + diarize" },
+    { idx: "02", label: "ICP panel", meta: "5 reader models" },
+    { idx: "03", label: "Share angles", meta: "Per-persona drafts" },
+    { idx: "04", label: "Human review", meta: "Editor judgment" },
+    { idx: "05", label: "Share tabs", meta: "Recipient-ready" },
+    { idx: "06", label: "Measurement", meta: "Predicted vs real" },
+  ];
+
+  const METRICS = [
+    { label: "Tab clicks", value: "1,284", delta: "+18.4% vs last episode", up: true, spark: [4,6,5,8,7,9,11,10,13,12,15,14] },
+    { label: "Copy clicks", value: "612", delta: "+9.1% vs last episode", up: true, spark: [3,3,4,5,4,6,7,6,8,7,9,9] },
+    { label: "Episode clicks", value: "3,940", delta: "+22.7% vs last episode", up: true, spark: [10,11,9,12,13,14,15,17,18,20,21,24] },
+    { label: "Newsletter clicks", value: "847", delta: "\u22123.2% vs last episode", up: false, spark: [9,10,8,11,9,10,8,9,7,8,7,7] },
+  ];
+
+  /* ============ Components ============ */
+
+  function useReveal() {
+    const ref = useRef(null);
+    useEffect(() => {
+      const el = ref.current;
+      if (!el) return;
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => {
+          if (e.isIntersecting) {
+            el.classList.add("in");
+            io.unobserve(el);
+          }
+        }),
+        { threshold: 0.12 }
+      );
+      io.observe(el);
+      return () => io.disconnect();
+    }, []);
+    return ref;
+  }
+
+  function Reveal({ children, as: As = "div", className = "", ...rest }) {
+    const ref = useReveal();
+    return <As ref={ref} className={`reveal ${className}`} {...rest}>{children}</As>;
+  }
+
+  function Topbar() {
+    return (
+      <header className="topbar">
+        <div className="wrap topbar-inner">
+          <div className="brand">
+            <div className="brand-mark">▮</div>
+            <div className="brand-name">
+              share_lab<span className="sub">// aidb prototype</span>
+            </div>
+          </div>
+          <nav className="topnav">
+            <a className="nav-link" href="#workflow">workflow</a>
+            <a className="nav-link" href="#icp">icp</a>
+            <a className="nav-link" href="#tabs">share_tabs</a>
+            <a className="nav-link" href="#measure">measure</a>
+            <span className="status">
+              <span className="status-dot" />
+              <span className="mono">build: 0.4.2 / proto</span>
+            </span>
+          </nav>
+        </div>
+      </header>
+    );
+  }
+
+  function Hero() {
+    return (
+      <section className="hero">
+        <div className="wrap">
+          <div className="hero-tag">
+            <span className="chip mono">PROTO</span>
+            <span>Share-layer infrastructure for AI-native media</span>
+          </div>
+          <h1 className="hero-headline">
+            Turn dense AI episodes into <span className="accent">things people actually forward</span>.
+          </h1>
+          <p className="hero-sub">
+            AIDB Share Lab is a prototype share layer for AI Daily Brief episodes. It identifies who would share a moment, who they would send it to, and how to package it without cheapening the brand.
+          </p>
+          <div className="cta-row">
+            <a className="btn btn-primary" href="#tabs">
+              View share tabs <span className="arrow">→</span>
+            </a>
+            <a className="btn btn-secondary" href="#workflow">
+              See workflow <span className="arrow">→</span>
+            </a>
+          </div>
+
+          <div className="terminal" style={{maxWidth: 820}}>
+            <div className="terminal-bar">
+              <span className="dot" /><span className="dot" /><span className="dot" />
+              <span className="title">share_lab ~ analyze.sh</span>
+            </div>
+            <div className="terminal-body">
+              <div className="term-line">
+                <span className="prompt">{">"}</span>
+                <span>episode analyzed: <span className="info">The Best Way to Talk to Your Agents</span></span>
+              </div>
+              <div className="term-line">
+                <span className="prompt">{">"}</span>
+                <span className="dim">duration 47:12 / 9 share-worthy moments / 5 personas active</span>
+              </div>
+              <div className="term-line">
+                <span className="prompt">{">"}</span>
+                <span><span className="key">predicted_shareability</span> <span className="ok">0.81</span> <span className="dim">// human review required</span></span>
+              </div>
+              <div className="term-line">
+                <span className="prompt">{">"}</span>
+                <span>generating share tabs for recipients<span className="blink" /></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function WorkflowStrip() {
+    return (
+      <section id="workflow" className="block">
+        <div className="wrap">
+          <div className="section-head">
+            <div>
+              <div className="eyebrow"><span className="num">01</span><span className="line" /><span>Workflow</span></div>
+              <h2 className="section-title">From transcript to forwardable moment.</h2>
+              <p className="section-lede">
+                The growth problem is not just finding good moments. It is making it easy for a listener to know exactly who should receive them and why.
+              </p>
+            </div>
+          </div>
+          <Reveal className="workflow">
+            <div className="workflow-row">
+              {WORKFLOW.map((s, i) => (
+                <div className="wf-step" key={s.idx}>
+                  <div className="wf-idx mono">{s.idx} {i < WORKFLOW.length-1 ? "→" : "■"}</div>
+                  <div className="wf-label">{s.label}</div>
+                  <div className="wf-meta mono">{s.meta}</div>
+                  <div className="wf-bar" />
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+    );
+  }
+
+  function ScoreRow({ label, value, kind = "default" }) {
+    const fillClass =
+      label === "Trust Risk"
+        ? value < 15 ? "risk-low" : value < 25 ? "risk-med" : "risk-hi"
+        : "";
+    return (
+      <div className="score-row">
+        <div className="score-label">{label}</div>
+        <div className="score-bar">
+          <div className={`score-fill ${fillClass}`} style={{ width: `${value}%` }} />
+        </div>
+        <div className="score-num mono">{value}</div>
+      </div>
+    );
+  }
+
+  function ICPPanel() {
+    return (
+      <section id="icp" className="block">
+        <div className="wrap">
+          <div className="section-head">
+            <div>
+              <div className="eyebrow"><span className="num">02</span><span className="line" /><span>ICP Panel</span></div>
+              <h2 className="section-title">Five recipient models pre-screen every moment.</h2>
+              <p className="section-lede">
+                Before a moment becomes a share tab, the panel scores it against five reader models. Trust Risk is intentional friction — high scores route to a human first.
+              </p>
+            </div>
+          </div>
+          <div className="icp-grid">
+            {ICPS.map((p, i) => (
+              <Reveal key={p.id} className="icp-card">
+                <div className="icp-head">
+                  <span className="icp-tag mono">persona_0{i+1}</span>
+                  <span className="icp-id mono">{p.id}</span>
+                </div>
+                <h3 className="icp-name">{p.name}</h3>
+                <p className="icp-desc">{p.desc}</p>
+                <div className="scores">
+                  <ScoreRow label="Shareability" value={p.scores.Shareability} />
+                  <ScoreRow label="Clarity" value={p.scores.Clarity} />
+                  <ScoreRow label="Usefulness" value={p.scores.Usefulness} />
+                  <ScoreRow label="Trust Risk" value={p.scores.TrustRisk} />
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal className="trust">
+            <div className="trust-icon">✓</div>
+            <div>
+              <div className="trust-title">Human-in-the-loop</div>
+              <p className="trust-body">
+                AI does not decide what is true or what AIDB should say. The panel pre-screens possible share angles. A human editor makes the final call on clarity, credibility, and taste.
+              </p>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+    );
+  }
+
+  function ShareTabs() {
+    const [active, setActive] = useState("boss");
+    const [channel, setChannel] = useState("slack");
+    const [copied, setCopied] = useState(false);
+    const tab = TABS.find(t => t.key === active);
+
+    useEffect(() => { setCopied(false); }, [active, channel]);
+
+    const composeText = useMemo(() => {
+      if (channel === "email") {
+        return `Subject: A quick AIDB takeaway worth your time\n\nHey —\n\n${tab.copy}\n\nClip: ${tab.clip}\n\n— sent via AIDB Share Lab`;
+      }
+      if (channel === "x") {
+        // shortened
+        return tab.copy.length > 270 ? tab.copy.slice(0, 267) + "…" : tab.copy;
+      }
+      return tab.copy;
+    }, [channel, tab]);
+
+    const copy = async () => {
+      try {
+        await navigator.clipboard.writeText(composeText);
+      } catch(e){}
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    };
+
+    return (
+      <section id="tabs" className="block">
+        <div className="wrap">
+          <div className="section-head">
+            <div>
+              <div className="eyebrow"><span className="num">03</span><span className="line" /><span>Share Tabs</span></div>
+              <h2 className="section-title">One moment, packaged five ways.</h2>
+              <p className="section-lede">
+                Each tab is a recipient-specific package: why they would care, the gist in three lines, a clip pointer, and ready-to-send copy in their preferred channel.
+              </p>
+            </div>
+            <div className="audience-meta">
+              <span className="meta-chip mono"><span className="k">episode</span><span className="v">#318</span></span>
+              <span className="meta-chip mono"><span className="k">moments</span><span className="v">9</span></span>
+              <span className="meta-chip mono"><span className="k">reviewed</span><span className="v">human ✓</span></span>
+            </div>
+          </div>
+
+          <div className="share-shell">
+            <div className="share-toolbar">
+              <span className="dot" /><span className="dot" /><span className="dot" />
+              <span className="ttitle mono">share_lab // ep_318 / status: <span className="ok">approved</span></span>
+              <span className="right">
+                <span>recipient</span>
+                <span style={{color:"var(--cyan)"}}>→</span>
+                <span style={{color:"var(--fg)"}}>{tab.label.replace("Send to ", "")}</span>
+              </span>
+            </div>
+
+            <div className="share-tabs" role="tablist">
+              {TABS.map((t, i) => (
+                <button
+                  key={t.key}
+                  role="tab"
+                  aria-selected={active===t.key}
+                  className={`share-tab ${active===t.key?"active":""}`}
+                  onClick={() => setActive(t.key)}
+                >
+                  <span className="tab-prefix">0{i+1} /</span>{t.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="share-body">
+              <div className="share-left">
+                <div>
+                  <div className="field-label"><span className="ic mono">▸</span> Why they would care</div>
+                  <p className="why-text">{tab.why}</p>
+                </div>
+
+                <div>
+                  <div className="field-label"><span className="ic mono">▸</span> 3-bullet summary</div>
+                  <ul className="bullets">
+                    {tab.bullets.map((b, i) => <li key={i}>{b}</li>)}
+                  </ul>
+                </div>
+
+                <div>
+                  <div className="field-label"><span className="ic mono">▸</span> Suggested clip moment</div>
+                  <div className="clip">
+                    <div className="clip-label mono">clip · {tab.stamp}</div>
+                    <div className="clip-body">{tab.clip}</div>
+                  </div>
+                </div>
+
+                <div className="trust-note-inline">
+                  <span className="tag">trust</span>
+                  <span className="body">{tab.trust}</span>
+                </div>
+              </div>
+
+              <div className="share-right">
+                <div className="compose">
+                  <div className="compose-head">
+                    <span>compose · ready-to-send</span>
+                    <div className="channel-switch">
+                      {["slack","email","x"].map(c => (
+                        <button key={c} className={channel===c?"on":""} onClick={()=>setChannel(c)}>
+                          {c === "x" ? "post" : c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="compose-body">
+                    <div className="compose-meta mono">
+                      <div className="row"><span className="k">to</span><span className="v">{tab.label.replace("Send to ", "")}</span></div>
+                      <div className="row"><span className="k">icp</span><span className="v">{tab.icp}</span></div>
+                      <div className="row"><span className="k">tone</span><span className="v">{tab.tone}</span></div>
+                      <div className="row"><span className="k">via</span><span className="v">{channel === "x" ? "public post" : channel}</span></div>
+                    </div>
+                    <div className="compose-text">{composeText}</div>
+                    <div className="compose-actions">
+                      <button className={`copy-btn ${copied?"copied":""}`} onClick={copy}>
+                        {copied ? "✓ copied" : "⧉ copy to clipboard"}
+                      </button>
+                      <button className="ghost-btn">regenerate</button>
+                      <button className="ghost-btn">flag for editor</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="trust-note-inline" style={{background:"rgba(106,169,255,0.05)", borderColor:"rgba(106,169,255,0.22)"}}>
+                  <span className="tag" style={{color:"var(--blue)", background:"rgba(106,169,255,0.12)"}}>note</span>
+                  <span className="body">All copy is editor-reviewed before publishing. Regenerate runs the panel again with a fresh prompt — the human still signs off.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function Sparkline({ data, up }) {
+    const w = 220, h = 36, p = 2;
+    const max = Math.max(...data), min = Math.min(...data);
+    const range = Math.max(1, max - min);
+    const step = (w - 2*p) / (data.length - 1);
+    const pts = data.map((v, i) => {
+      const x = p + i * step;
+      const y = h - p - ((v - min) / range) * (h - 2*p);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(" ");
+    const stroke = up ? "#5eead4" : "#fb7185";
+    return (
+      <svg className="spark" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" width="100%">
+        <polyline fill="none" stroke={stroke} strokeWidth="1.5" points={pts} opacity="0.9"/>
+        <polyline fill={`url(#g-${up?'u':'d'})`} stroke="none" points={`${p},${h-p} ${pts} ${w-p},${h-p}`} opacity="0.18"/>
+        <defs>
+          <linearGradient id="g-u" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#5eead4" stopOpacity="0.6"/>
+            <stop offset="100%" stopColor="#5eead4" stopOpacity="0"/>
+          </linearGradient>
+          <linearGradient id="g-d" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#fb7185" stopOpacity="0.5"/>
+            <stop offset="100%" stopColor="#fb7185" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
+  function Measurement() {
+    return (
+      <section id="measure" className="block">
+        <div className="wrap">
+          <div className="section-head">
+            <div>
+              <div className="eyebrow"><span className="num">04</span><span className="line" /><span>Measurement</span></div>
+              <h2 className="section-title">Make sharing measurable.</h2>
+              <p className="section-lede">
+                The system gets stronger when predicted shareability is compared against real listener behavior.
+              </p>
+            </div>
+          </div>
+          <div className="metric-grid">
+            {METRICS.map((m, i) => (
+              <Reveal key={m.label} className="metric">
+                <div className="mlabel mono">{m.label}</div>
+                <div className="mval">{m.value}</div>
+                <div className={`mdelta ${m.up?"":"neg"}`}>
+                  <span>{m.up ? "▲" : "▼"}</span><span>{m.delta}</span>
+                </div>
+                <Sparkline data={m.spark} up={m.up} />
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function Closing() {
+    return (
+      <section className="block">
+        <div className="wrap">
+          <Reveal className="closing">
+            <div className="eyebrow"><span className="num">05</span><span className="line" /><span>Closing</span></div>
+            <h2>Built as a share layer, not a content replacement.</h2>
+            <p>
+              AIDB Share Lab helps surface which moments are most likely to be forwarded, why they matter to a specific recipient, and how to package them without weakening AIDB's credibility.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+    );
+  }
+
+  function Footer() {
+    return (
+      <footer>
+        <div className="wrap foot">
+          <div className="left">
+            <div className="brand-mark">▮</div>
+            <span>share_lab // prototype built for the AIDB Growth Engineer application</span>
+          </div>
+          <div className="right">
+            <a href="#workflow">workflow</a>
+            <a href="#icp">icp</a>
+            <a href="#tabs">share_tabs</a>
+            <a href="#measure">measure</a>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
+  function App() {
+    return (
+      <>
+        <Topbar />
+        <Hero />
+        <WorkflowStrip />
+        <ICPPanel />
+        <ShareTabs />
+        <Measurement />
+        <Closing />
+        <Footer />
+      </>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
+<!doctype html>
+<html lang="en">
 <head><meta charset="utf-8"><title>AIDB Share Lab</title></head>
 <body>Preparing portfolio homepage...</body>
 </html>
